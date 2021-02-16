@@ -1,12 +1,28 @@
 #include <ESP8266WiFi.h>
+
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+WiFiUDP ntpUDP;
+// By default 'pool.ntp.org' is used with 60 seconds update interval and
+// no offset
+NTPClient timeClient(ntpUDP);
+
  
 const char* ssid = "wifi_ssid";//type your ssid
 const char* password = "wifi_passwd";//type your password
  
 int ledPin = 2; // GPIO2 of ESP8266
 WiFiServer server(80);
+
+char scheduleHours[24];
  
 void setup() {
+
+  // Setting up time schedule
+  for (int i=0;i<12;i++) {
+    scheduleHours[8+i] = 'Y';
+   }
+  
   Serial.begin(115200);
   delay(10);
  
@@ -28,6 +44,9 @@ void setup() {
   }
   Serial.println("");
   Serial.println("WiFi connected");
+
+  // Sync time with NTP server
+  timeClient.begin();
    
   // Start the server
   server.begin();
@@ -42,6 +61,20 @@ void setup() {
 }
  
 void loop() {
+  // Get and output NTP time
+  timeClient.update();
+  Serial.print(timeClient.getFormattedTime());
+  Serial.print(" | schedule=");
+  Serial.print(scheduleHours[timeClient.getHours()]);
+    
+  if(scheduleHours[timeClient.getHours()] == 'Y' ){
+    Serial.print(" | ON");
+  } else {
+    ESP.deepSleep(900e6, WAKE_RFCAL);
+  }
+  Serial.println("");
+  delay(1000);
+  
   // Check if a client has connected
   WiFiClient client = server.available();
   if (!client) {
