@@ -32,13 +32,18 @@ TODO List:
 #include <TimeAlarms.h>
 AlarmId Alarm_id;
 
-#include <NTPClient.h>
-#include <WiFiUdp.h>
-WiFiUDP ntpUDP;
-// By default 'pool.ntp.org' is used with 60 seconds update interval and
-// no offset
-NTPClient timeClient (ntpUDP);
+//#include <NTPClient.h>
+//#include <WiFiUdp.h>
+//WiFiUDP ntpUDP;
+//// By default 'pool.ntp.org' is used with 60 seconds update interval and
+//// no offset
+//NTPClient timeClient (ntpUDP);
 
+//Library: https://github.com/SensorsIot/NTPtimeESP
+#include <NTPtimeESP.h>
+#define DEBUG_ON
+NTPtime NTPserver("ch.pool.ntp.org");   // Choose server pool as required
+strDateTime dateTime;
 
 //WiFiServer server(80);
 // Create AsyncWebServer object on port 80
@@ -88,6 +93,11 @@ const char* ssid = "ESP_WIFI";
 const char* password = "12345678";
 
 const char* PARAM_INPUT_1 = "state";
+const char* PARAM_FORM_INPUT_1 = "input1";
+const char* PARAM_FORM_INPUT_2 = "input2";
+const char* PARAM_FORM_INPUT_3 = "input3";
+char* PARAM_FORM_INPUT_VAL_1 = "00001111";
+
 const char* webForm_ssid = "input_ssid";
 const char* webForm_passwd = "input_passwd";
 const char* webForm_led_start = "input_led_start";
@@ -314,7 +324,13 @@ String processor(const String& var){
   if(var == "FORM_WIFI_PLACEHOLDER"){
     String forms ="";
     forms += " <form action=\"/submit\">";
-   
+/*
+    forms += "input1: <input type=\"text\" name=\"input1\" value=\"" ;
+    forms += String(PARAM_FORM_INPUT_VAL_1).c_str() ;
+    forms += "\"><br>";
+    forms += "input2: <input type=\"text\" name=\"input2\"><br>";
+    forms += "input3: <input type=\"time\" name=\"input3\"><br>";
+*/    
     forms += "&#160;&#160;&#160;&#160;&#160;&#160;&#160;"; //aligment spaces because leet html skilzz 
     forms += "T&#299;kls: <input type=\"text\" name=\"";
     forms += String(webForm_ssid).c_str();
@@ -337,6 +353,13 @@ String processor(const String& var){
   if(var == "FORM_LIGHT_PLACEHOLDER"){
     String forms ="";
     forms += " <form action=\"/submit\">";
+/*
+    forms += "input1: <input type=\"text\" name=\"input1\" value=\"" ;
+    forms += String(PARAM_FORM_INPUT_VAL_1).c_str() ;
+    forms += "\"><br>";
+    forms += "input2: <input type=\"text\" name=\"input2\"><br>";
+    forms += "input3: <input type=\"time\" name=\"input3\"><br>";
+*/
     //forms += "Gaismu intervāls: <br>";
     forms += "Gaismu interv&#257;ls:&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<br>";
     forms += "&#160;&#160;&#160;&#160;&#160;&#160;&#160; no: <input type=\"time\" name=\"";
@@ -434,11 +457,11 @@ void setup(){
         }//if(millis() > 45000 )
       }//while (WiFi.status()
     printClock();
-    Serial.print(":  WiFi connected");
+    Serial.print(": WiFi connected");
     }
     if(eepromVar1.isAP){
       //IPAddress    apIP(42, 42, 42, 42);  // Defining a static IP address: local & gateway
-      // Default IP in AP mode is 192.168.4.1
+                                    // Default IP in AP mode is 192.168.4.1
       //IPAddress local_IP(192,168,4,22);
       //IPAddress gateway(192,168,4,9);
       //IPAddress subnet(255,255,255,0);
@@ -465,20 +488,20 @@ void setup(){
     }
 
 
-    // Sync time with NTP server
-    timeClient.begin();
-    // Set offset time in seconds to adjust for your timezone, for example:
-    // GMT +1 = 3600
-    // GMT +8 = 28800
-    // GMT -1 = -3600
-    // GMT 0 = 0
-    timeClient.setTimeOffset(3600*3);
+//    // Sync time with NTP server
+//    timeClient.begin();
+//    // Set offset time in seconds to adjust for your timezone, for example:
+//    // GMT +1 = 3600
+//    // GMT +8 = 28800
+//    // GMT -1 = -3600
+//    // GMT 0 = 0
+//    timeClient.setTimeOffset(3600*3);
     Alarm_SyncNTPTime();
 
     // Start the webServer
     server.begin();
     printClock();
-    Serial.println(": Server started: ");
+    Serial.print(": Server started: ");
     // Print the IP address
     Serial.print("Use this URL to connect: ");
     Serial.print("http://");
@@ -537,6 +560,28 @@ void setup(){
 
     
     // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
+    /*
+    if (request->hasParam(PARAM_FORM_INPUT_1)) {
+      inputMessage = request->getParam(PARAM_FORM_INPUT_1)->value();
+      inputParam = PARAM_FORM_INPUT_1;
+      //PARAM_FORM_INPUT_VAL_1 = inputMessage;
+      inputMessage.toCharArray(PARAM_FORM_INPUT_VAL_1, 36);
+      Serial.println(); Serial.print(inputParam); Serial.print(": "); Serial.print(inputMessage);
+    }
+    // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
+    if (request->hasParam(PARAM_FORM_INPUT_2)) {
+      inputMessage = request->getParam(PARAM_FORM_INPUT_2)->value();
+      inputParam = PARAM_FORM_INPUT_2;
+      Serial.println(); Serial.print(inputParam); Serial.print(": "); Serial.print(inputMessage);
+    }
+    // GET input3 value on <ESP_IP>/get?input3=<inputMessage>
+    if (request->hasParam(PARAM_FORM_INPUT_3)) {
+      inputMessage = request->getParam(PARAM_FORM_INPUT_3)->value();
+      inputParam = PARAM_FORM_INPUT_3;
+      inputMessage.toCharArray(PARAM_FORM_INPUT_VAL_1, 36);
+      Serial.println(); Serial.print(inputParam); Serial.print(": "); Serial.print(inputMessage);
+    }
+    */
     if (request->hasParam(webForm_ssid)) {
       inputMessage = request->getParam(webForm_ssid)->value();
       if(String(eepromVar1.ssid) != inputMessage){
@@ -564,6 +609,7 @@ void setup(){
     
     if (request->hasParam(webForm_led_start)) {
       inputMessage = request->getParam(webForm_led_start)->value();
+      //inputParam = PARAM_FORM_INPUT_3;
       Serial.println(); Serial.print(eepromVar1.start_time.h); Serial.print(" != "); Serial.print(inputMessage.substring(0, 2).toInt());
       if(eepromVar1.start_time.h != inputMessage.substring(0, 2).toInt()){
         Serial.println(); Serial.print("eepromVar1.start_time.h != inputMessage.substring(0, 2).toInt()");
@@ -576,10 +622,13 @@ void setup(){
         eepromVar1.start_time.m = inputMessage.substring(3, 5).toInt();
         isEEPROMDataUpdated = true;
       }
+      
+      //inputMessage.toCharArray(PARAM_FORM_INPUT_VAL_1, 36);
       Serial.println(); Serial.print(inputParam); Serial.print(": "); Serial.print(inputMessage);
     }
     if (request->hasParam(webForm_led_end)) {
       inputMessage = request->getParam(webForm_led_end)->value();
+      //inputParam = PARAM_FORM_INPUT_3;
       Serial.println(); Serial.print(eepromVar1.start_time.h); Serial.print(" != "); Serial.print(inputMessage.substring(0, 2).toInt());
       if(eepromVar1.start_time.h != inputMessage.substring(0, 2).toInt()){
         Serial.println(); Serial.print("eepromVar1.start_time.h != inputMessage.substring(0, 2).toInt()");
@@ -592,6 +641,8 @@ void setup(){
         eepromVar1.start_time.m = inputMessage.substring(3, 5).toInt();
         isEEPROMDataUpdated = true;
       }
+      
+      //inputMessage.toCharArray(PARAM_FORM_INPUT_VAL_1, 36);
       Serial.println(); Serial.print(inputParam); Serial.print(": "); Serial.print(inputMessage);
     }
     
@@ -689,37 +740,37 @@ void setup(){
   //Alarm.alarmRepeat(20,30,0, Alarm_Light_Off);  // 5:45pm every day
   //eepromVar1.start_time = set_day_time (210000);
   //eepromVar1.end_time = set_day_time (230000);
-  Serial.println();
-  Serial.println("?????????????????? Alarm IS BETWEEN");
-  Serial.print("start_time:");
-  Serial.println(int(eepromVar1.start_time.h*10000 + eepromVar1.start_time.m*100 + eepromVar1.start_time.s));
-  Serial.print("end_time:");
-  Serial.println(int(eepromVar1.end_time.h*10000 + eepromVar1.end_time.m*100 + eepromVar1.end_time.s));
-  Serial.print("time:");
-  Serial.print(int(hour()*10000 + minute()*100 + second()));
+  printClock();
+  Serial.printf(": Is Time between START_Time and END_Time( %d, %d, %d)"
+    , int(hour()*10000 + minute()*100 + second())
+    , int(eepromVar1.start_time.h*10000 + eepromVar1.start_time.m*100 + eepromVar1.start_time.s)
+    , int(eepromVar1.end_time.h*10000 + eepromVar1.end_time.m*100 + eepromVar1.end_time.s)
+    );
+//  Serial.print("start_time:");
+//  Serial.println(int(eepromVar1.start_time.h*10000 + eepromVar1.start_time.m*100 + eepromVar1.start_time.s));
+//  Serial.print("end_time:");
+//  Serial.println(int(eepromVar1.end_time.h*10000 + eepromVar1.end_time.m*100 + eepromVar1.end_time.s));
+//  Serial.print("time:");
+//  Serial.print(int(hour()*10000 + minute()*100 + second()));
+
+  //Alarm.alarmRepeat(dowSaturday,8,30,30,WeeklyAlarm);  // 8:30:30 every Saturday
+  // create timers, to trigger relative to when they're created
+  //Alarm.timerRepeat(15, Repeats);           // timer for every 15 seconds
+  //id = Alarm.timerRepeat(2, Repeats2);      // timer for every 2 seconds
+  //Alarm.timerOnce(10, OnceOnly);            // called once after 10 seconds
   Alarm.alarmRepeat(eepromVar1.start_time.h, eepromVar1.start_time.m, 0, Alarm_Light_On);  // 8:30am every day
+  Alarm.alarmRepeat(eepromVar1.end_time.h, eepromVar1.end_time.m, 0, Alarm_Light_Off);  // 5:45pm every day
   if(int(hour()*10000 + minute()*100 + second()) >= int(eepromVar1.start_time.h*10000 + eepromVar1.start_time.m*100 + eepromVar1.start_time.s)
     && int(hour()*10000 + minute()*100 + second()) < int(eepromVar1.end_time.h*10000 + eepromVar1.end_time.m*100 + eepromVar1.end_time.s)
   ){
     Alarm_Light_On();
   }
-  Alarm.alarmRepeat(eepromVar1.end_time.h, eepromVar1.end_time.m, 0, Alarm_Light_Off);  // 5:45pm every day
-  
-
-
-  //Alarm.alarmRepeat(dowSaturday,8,30,30,WeeklyAlarm);  // 8:30:30 every Saturday
-
-  // create timers, to trigger relative to when they're created
-  //Alarm.timerRepeat(15, Repeats);           // timer for every 15 seconds
-  //id = Alarm.timerRepeat(2, Repeats2);      // timer for every 2 seconds
-  //Alarm.timerOnce(10, OnceOnly);            // called once after 10 seconds
-
 }
   
 void loop() {
 //  if(eepromVar1.isAP){
 //    printClock();
-//    Serial.printf(": Stations connected = %d\n", WiFi.softAPgetStationNum()); 
+//    Serial.printf(": Stations connected = %d\n", WiFi.softAPgetStationNum());
 //  }
   // read the state of the switch into a local variable:
   int reading = digitalRead(buttonPin);
@@ -803,7 +854,7 @@ void Alarm_switchGpio(const int inGpio, const bool inState){
 // milliseconds, will quickly become a bigger number than can be stored in an int.
  lastDebounceTime = millis();  // the last time the output pin was toggled
 //  printClock();
-  Serial.printf("\n: Alarm_switchGpio(%i,", inGpio);
+  Serial.printf(": Alarm_switchGpio(%i,", inGpio);
   Serial.print((inState) ? "true)" : "false)");
   //yield();        
 };
@@ -852,40 +903,6 @@ confGPIO set_confGPIO (const bool inIsUsed, const byte inPinNum, const byte inMo
   outConfGPIO.defaultState = defaultState;
   return outConfGPIO;
 };
-
-/*
-// Be very careful changing 'printMyTime', some magic happening brakes stuff
-char* printMyTime(day_time inTime){
-  char outTime[6];
-  
-  Serial.println("---------");
-  Serial.print("printMyTime(");
-  //Serial.print(inTime.h/10 + 48);
-  Serial.print(inTime.h);
-  Serial.print(",");
-  Serial.print(inTime.m);
-  Serial.print("): ");
-
-  
-  //Serial.print("|");
-  //Serial.print(inTime.h%10 + 48);
-  //Serial.print(":");
-  //Serial.print(inTime.h/10 + 48);
-
-  outTime[0] = char(inTime.h/10 + 48);
-  outTime[1] = char(inTime.h%10 + 48);
-  outTime[2] = ':';
-  outTime[3] = char(inTime.m/10 + 48);
-  outTime[4] = char(inTime.m%10 + 48);
-  outTime[5] = '\0';
-  
-  //Serial.println("");
-  //Serial.print("printMyTime: ");
-  Serial.print(outTime); // Do not remove, this somehow stores, or terminates char array making it acceessable for funct:"processor"
-
-  return outTime;
-};
-*/
 
 String printWebFormTimeVal(day_time inTime){
   String outTime = "";
@@ -947,9 +964,9 @@ void printClock() {
   Serial.print(hour());
   printDigits(minute());
   printDigits(second());
-  Serial.print(" & ");
-  Serial.print(timeClient.getFormattedTime());
-  Serial.print(": ");
+//  Serial.print(" & ");
+//  Serial.print(timeClient.getFormattedTime());
+//  Serial.print(": ");
 }
 //-------------------------------------------------------
 void digitalClockDisplay() {
@@ -972,29 +989,40 @@ void printDigits(int digits) {
   Serial.print(digits);
 }
 void Alarm_SyncNTPTime(){
-  timeClient.update();
+  //timeClient.update();
   printClock();
   Serial.print(": Alarm_SyncNTPTime()");
+  dateTime = NTPserver.getNTPtime(2.0, 1);
   
-  unsigned long epochTime = timeClient.getEpochTime();
-  printClock();
-  Serial.print("timeClient.getEpochTime(): ");
-  Serial.print(epochTime);
-  //Get a time structure
-  struct tm *ptm = gmtime ((time_t *)&epochTime); 
-  
-  printClock();
-  Serial.print("timeClient.date: ");
-  Serial.print(ptm->tm_mday); Serial.print(".");
-  Serial.print(ptm->tm_mon+1); Serial.print(".");
-  Serial.print(ptm->tm_year+1900);
-  
-  //setTime(timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds(),1,1,21); // v1.10 - set time to XX:YY:00am Jan 1 2021
-  setTime(timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds(), ptm->tm_mday,ptm->tm_mon+1, ptm->tm_year+1900);
+  while(!dateTime.valid){
+    Serial.print(".");
+    dateTime = NTPserver.getNTPtime(2.0, 1);
+//    Serial.println();
+//    Serial.print("dateTime.hour: ");   
+//    Serial.println(dateTime.hour);
+//    Serial.print("dateTime.minute: ");   
+//    Serial.println(dateTime.minute);
+//    Serial.print("dateTime.second: "); 
+//    Serial.println(dateTime.second);
+//    Serial.print("dateTime.year: ");   
+//    Serial.println(dateTime.year);
+//    Serial.print("dateTime.month: ");   
+//    Serial.println(dateTime.month);
+//    Serial.print("dateTime.day: ");   
+//    Serial.println(dateTime.day);
+//    Serial.print("dateTime.dayofWeek: ");   
+//    Serial.println(dateTime.dayofWeek);
+    delay(1000);
+  }
+    printClock();
+    Serial.print(": ");
+    NTPserver.printDateTime(dateTime);
+    setTime(dateTime.hour, dateTime.minute, dateTime.second, dateTime.day, dateTime.month, dateTime.year);
 };
 
 void Alarm_Light_On(){
   printClock();
+  Serial.print(": Alarm: - turn lights ON");
   Alarm_switchGpio(output, false);
 }
 //-------------------------------------------------------
